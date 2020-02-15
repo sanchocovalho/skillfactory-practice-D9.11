@@ -1,6 +1,7 @@
 from .models import Post, Category, PostAuthor
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
+from django.contrib import messages
 
 class AuthorSerializer(serializers.ModelSerializer):  
     class Meta:
@@ -16,11 +17,12 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'title']
 
     def create(self, validated_data):
-        if not Category.objects.filter(title=validated_data['title']).exists():
-            slug = Category.get_slug_by_name(validated_data['title'])
+        title = validated_data['title']
+        if not Category.objects.filter(title=title).exists():
+            slug = Category.get_slug_by_name(title)
             return Category.objects.create(slug=slug, **validated_data)
         else:
-            return Category.objects.get(title=validated_data['title'])
+            return Category.objects.get(title=title)
 
 class PostSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(required=False)
@@ -32,25 +34,36 @@ class PostSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         author = validated_data.pop('author')
-        if author['username']:
-            if PostAuthor.objects.filter(username=author['username']).exists():
-                validated_data['author'] = PostAuthor.objects.filter(username=author['username'])[0]
+        username = author['username']
+        if username:
+            if PostAuthor.objects.filter(username=username).exists():
+                validated_data['author'] = PostAuthor.objects.filter(username=username)[0]
             else:
+                password = ''
+                passkey = username
+                if len(passkey) <= 8:
+                    passkey += passkey
+                for char in passkey:
+                    if char in ['a','e','i','j','o','u','y']:
+                        password += char.upper()
+                    else:
+                        password += char.lower()
                 validated_data['author'] = PostAuthor.objects.create_user(
-                    username=author['username'],
+                    username=username,
                     first_name=author['first_name'],
                     last_name=author['last_name'],
-                    password=author['username'].upper()
+                    password=password
                     )
 
         category = validated_data.pop('category')
-        if category['title']:
+        title = category['title']
+        if title:
             if not Category.objects.filter(title=category['title']).exists():
                 cat = {}
-                cat['title'] = category['title']
-                cat['slug'] = Category.get_slug_by_name(category['title'])
+                cat['title'] = title
+                cat['slug'] = Category.get_slug_by_name(title)
                 Category.objects.create(**cat)
-            validated_data['category'] = Category.objects.filter(title=category['title'])[0]
+            validated_data['category'] = Category.objects.filter(title=title)[0]
         else:
             validated_data['category'] = None
 
