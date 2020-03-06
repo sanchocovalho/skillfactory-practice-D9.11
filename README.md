@@ -35,10 +35,10 @@
    - heroku create
    - heroku addons:create heroku-postgresql --as DATABASE
    - heroku config:set SECRET_KEY=Ваш_секретный_код
-   - heroku config:set DISABLE_COLLECTSTATIC=1
+   - heroku config:set DISABLE_COLLECTSTATIC=1 (опционально)
    - git push heroku master
-   - heroku config:unset DISABLE_COLLECTSTATIC
-   - heroku run python manage.py collectstatic --noinput
+   - heroku config:unset DISABLE_COLLECTSTATIC (опционально)
+   - heroku run python manage.py collectstatic --noinput (опционально)
    - heroku run python manage.py makemigrations
    - heroku run python manage.py migrate
    - heroku run python manage.py createsuperuser
