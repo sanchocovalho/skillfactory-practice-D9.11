@@ -22,9 +22,6 @@
 5) Установите все необходимые пакеты:
    - pip install -r requirements.txt
 6) Выполнить следующий команды:
-   - python manage.py makemigrations
-   - python manage.py migrate
-   - python manage.py createsuperuser
    - python manage.py runserver
 
 Для того, чтобы сделать деплой на heroku необходимо:

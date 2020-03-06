@@ -2,3 +2,4 @@ psycopg2-binary
 django
 dj_database_url
 djangorestframework
+whitenoise
