@@ -101,6 +101,7 @@ class Post(models.Model):
         null=True,
         default=None,
         verbose_name = u'Категория',
+        related_name = 'posts'
         )
     author = models.ForeignKey(
         PostAuthor,
@@ -109,6 +110,7 @@ class Post(models.Model):
         null=True,
         default=None,
         verbose_name = u'Автор',
+        related_name = 'posts'
         )
 
     class Meta:
@@ -116,4 +118,4 @@ class Post(models.Model):
         verbose_name_plural = u'Публикации'
 
     def __str__(self):
-        return self.title
+        return f"#{self.id}: {self.title}"

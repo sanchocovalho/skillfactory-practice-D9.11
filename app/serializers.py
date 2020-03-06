@@ -12,9 +12,12 @@ class AuthorSerializer(serializers.ModelSerializer):
         }
 
 class CategorySerializer(serializers.ModelSerializer):
+
+    posts = serializers.StringRelatedField(many=True, read_only=True)
+
     class Meta:
         model = Category
-        fields = ['id', 'title']
+        fields = ['id', 'title', 'posts']
 
     def create(self, validated_data):
         title = validated_data['title']
@@ -22,6 +25,10 @@ class CategorySerializer(serializers.ModelSerializer):
             slug = Category.get_slug_by_name(title)
             return Category.objects.create(slug=slug, **validated_data)
         else:
+            if Post.objects.filter(category__title=title).exists():
+                validated_data['posts'] = Post.objects.filter(category__title=title)
+            else:
+                validated_data['posts'] = None
             return Category.objects.get(title=title)
 
     def update(self, instance, validated_data):
@@ -32,46 +39,44 @@ class CategorySerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class CategorySerializerField(serializers.PrimaryKeyRelatedField):
+
+    def display_value(self, instance):
+        return instance.title
+
 class PostSerializer(serializers.ModelSerializer):
-    author = AuthorSerializer(required=False)
-    category = CategorySerializer(required=False)
+    author = AuthorSerializer(required=True)
+    category = CategorySerializerField(queryset=Category.objects.all(), required=False)
 
     class Meta:
         model = Post
         fields = '__all__'
 
     def validatation(self, validated_data):
-        author = validated_data.pop('author')
-        username = author['username']
-        if username:
-            if PostAuthor.objects.filter(username=username).exists():
-                validated_data['author'] = PostAuthor.objects.filter(username=username)[0]
-            else:
-                password = ''
-                passkey = username
-                if len(passkey) <= 8:
-                    passkey += passkey
-                for char in passkey:
-                    if char in ['a','e','i','j','o','u','y']:
-                        password += char.upper()
-                    else:
-                        password += char.lower()
-                validated_data['author'] = PostAuthor.objects.create_user(
-                    username=username,
-                    first_name=author['first_name'],
-                    last_name=author['last_name'],
-                    password=password
-                    )
-
-        category = validated_data.pop('category')
-        title = category['title']
-        if title:
-            if not Category.objects.filter(title=category['title']).exists():
-                cat = {}
-                cat['title'] = title
-                cat['slug'] = Category.get_slug_by_name(title)
-                Category.objects.create(**cat)
-            validated_data['category'] = Category.objects.filter(title=title)[0]
+        if 'author' in validated_data:
+            author = validated_data.pop('author')
+            username = author['username']
+            if username:
+                if PostAuthor.objects.filter(username=username).exists():
+                    validated_data['author'] = PostAuthor.objects.filter(username=username)[0]
+                else:
+                    password = ''
+                    passkey = username
+                    if len(passkey) <= 8:
+                        passkey += passkey
+                    for char in passkey:
+                        if char in ['a','e','i','j','o','u','y']:
+                            password += char.upper()
+                        else:
+                            password += char.lower()
+                    validated_data['author'] = PostAuthor.objects.create_user(
+                        username=username,
+                        first_name=author['first_name'],
+                        last_name=author['last_name'],
+                        password=password
+                        )
+        if 'category' in validated_data:
+            validated_data['category'] = Category.objects.filter(title=validated_data['category'])[0]
         else:
             validated_data['category'] = None
 
